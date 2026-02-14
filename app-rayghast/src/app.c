@@ -657,10 +657,12 @@ int
 main()
 {
 
-#if defined(__linux__) || defined(__gnu_linux__)
+#if defined(NILE_LINUX)
   x11_main(app_window, &player);
 #endif
-#if defined(_WIN32) || defined(_WIN64) || defined(__CYGWIN__)
+#if defined(NILE_WINDOWS)
   win32_main();
 #endif
+
+  return 0;
 }
