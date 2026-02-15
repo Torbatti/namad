@@ -27,5 +27,6 @@ mkdir -p local
 
 # --- Build & Run Program -----------------------------------------------------
 # zig cc src/app.c -o build/rayghast -lX11 -lXrandr -lGL $debug_flags
-zig cc src/app.c -o build/rayghast -lX11 -lXrandr -lGL
+zig cc src/app.c -o build/rayghast -lX11 -lXrandr -lGL -DNILE_BUILD_DEBUG
+# gcc src/app.c -o build/rayghast -lX11 -lXrandr -lGL -lm -DNILE_BUILD_DEBUG
 build/rayghast
