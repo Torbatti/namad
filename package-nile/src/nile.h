@@ -30,7 +30,6 @@
  * SUCH DAMAGE.
  */
 
-
 #if defined(__EMSCRIPTEN__)
 # define NILE_WASM
 # error "Platform Not implemented Yet!"
@@ -52,6 +51,14 @@
 #if !defined(NILE_ASSERT)
 # include <assert.h>
 # define NILE_ASSERT assert
+
+# if !defined(NILE_BUILD_DEBUG) && !defined(NILE_BUILD_RELEASESAFE)
+# define NILE_SAFE_ASSERT(a)
+# endif
+# if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
+#  define NILE_SAFE_ASSERT(a) assert(a)
+# endif
+
 #endif
 
 #if defined(NILE_LINUX)
