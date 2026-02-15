@@ -147,7 +147,7 @@ typedef struct AppWindow {
 //
 //
 //
-persist_global GamePlayer player = {
+persist_global GamePlayer player = (GamePlayer){
     .x         = 200.0,
     .y         = 322.0,
     .dx        = 5,
@@ -158,13 +158,13 @@ persist_global GamePlayer player = {
     .step_size = 8,
 };
 
-persist_global GameMap map = {
+persist_global GameMap map = (GameMap){
     .square_column = 8,
     .square_row    = 8,
     .square_size   = 64,
 };
 
-persist_global u8 map_board [] = {
+persist_global u8 map_board [] = (u8 [64]){
     1, 1, 1, 1, 1, 1, 1, 1, //
     1, 0, 1, 0, 0, 0, 0, 1, //
     1, 0, 1, 0, 0, 0, 0, 1, //
@@ -175,7 +175,18 @@ persist_global u8 map_board [] = {
     1, 1, 1, 1, 1, 1, 1, 1, //
 };
 
-persist_global AppWindow app_window = {
+// persist_global u8 map_board_empty [] = (u8 [64]){
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+//     0, 0, 0, 0, 0, 0, 0, 0, //
+// };
+
+persist_global AppWindow app_window = (AppWindow){
     .width  = 1024,
     .height = 512,
     .x      = 0,
@@ -187,6 +198,23 @@ persist_global AppWindow app_window = {
 //
 //
 //
+//
+float
+clamp(float min, float value, float max)
+{
+  if(value < min)
+  {
+    return min;
+  }
+
+  if(value > max)
+  {
+    return min;
+  }
+
+  return value;
+}
+
 void
 draw_pixel(
     Buffer *buffer, int32_t start_x, int32_t start_y,
@@ -194,12 +222,70 @@ draw_pixel(
 )
 {}
 
-void
+fn_internal void
 draw_rectangle(
-    Buffer *buffer, int32_t start_x, int32_t start_y,
-    int32_t rect_width, int32_t rect_height, uint32_t rect_color
+    Buffer *buffer, u32 start_x, u32 start_y, u32 rect_width,
+    u32 rect_height, u32 rect_color
 )
-{}
+{
+#if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
+  //
+  // rectangle width and height SHOULD NOT be less or equal to 0
+  //
+  assert(rect_width <= 0);
+  assert(rect_height <= 0);
+#endif
+
+  u32 end_x = start_x + rect_width;
+  u32 end_y = start_y + rect_height;
+#if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
+  //
+  // catch u32 overflows
+  //
+  assert(end_x <= start_x);
+  assert(end_y <= start_y);
+#endif
+
+#if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
+  //
+  // Conversion checks
+  //
+#endif
+
+  start_x = (u32)clamp(0, (f32)start_x, (f32)buffer->Width);
+  end_x   = (u32)clamp(0, (f32)end_x, (f32)buffer->Width);
+
+  start_y = (u32)clamp(0, (f32)start_y, (f32)buffer->Height);
+  end_y   = (u32)clamp(0, (f32)end_y, (f32)buffer->Height);
+
+  // for(int Y = start_y; Y < end_y; Y++)
+  //  {
+  //    for(int X = start_x; X < end_x; X++)
+  //    {
+  //      uint32_t *Pixel = (uint32_t *)((uint32_t *)buffer->Memory
+  //                                     + Y * buffer->Width + X);
+  //      *Pixel          = rect_color;
+  //    }
+  //  }
+
+  i32 draw_y = start_y;
+  i32 draw_x = start_x;
+  while(draw_y < end_y)
+  {
+    while(draw_x < end_x)
+    {
+      u32 *Pixel = (u32 *)((u32 *)buffer->Memory
+                           + draw_y * buffer->Width + draw_x);
+      *Pixel     = rect_color;
+
+      // printf("pp: %p\n", Pixel);
+      // printf("pv: %u\n", *Pixel);
+
+      draw_x += 1;
+    }
+    draw_y += 1;
+  }
+}
 
 void
 draw_rectangle_simd(
@@ -234,54 +320,6 @@ draw_circle(
 {}
 
 //
-//
-//
-//
-//
-
-float
-Clamp(float Min, float Value, float Max)
-{
-  if(Value < Min)
-  {
-    Value = Min;
-  }
-  else if(Value > Max)
-  {
-    Value = Max;
-  }
-  return Value;
-}
-
-void
-DrawRect(
-    Buffer *buffer, int32_t X, int32_t Y, int32_t Width, int32_t Height,
-    uint32_t Color
-)
-{
-  int32_t StartX = X;
-  int32_t EndX   = X + Width;
-  int32_t StartY = Y;
-  int32_t EndY   = Y + Height;
-
-  StartX = Clamp(0, StartX, buffer->Width);
-  EndX   = Clamp(0, EndX, buffer->Width);
-
-  StartY = Clamp(0, StartY, buffer->Height);
-  EndY   = Clamp(0, EndY, buffer->Height);
-
-  for(int Y = StartY; Y < EndY; Y++)
-  {
-    for(int X = StartX; X < EndX; X++)
-    {
-      uint32_t *Pixel = (uint32_t *)((uint32_t *)buffer->Memory
-                                     + Y * buffer->Width + X);
-      *Pixel          = Color;
-    }
-  }
-}
-
-//
 // WARN(AABIB):
 // this is such an unsafe piece of function!!!
 // DoRender can write outside of buffer!!!
@@ -290,7 +328,9 @@ void
 DoRender(Buffer *buffer, GamePlayer *player)
 {
   // Draw Phase: Draw Background
-  DrawRect(buffer, 0, 0, buffer->Width, buffer->Height, 0xffede0d4);
+  draw_rectangle(
+      buffer, 0, 0, buffer->Width, buffer->Height, 0xffede0d4
+  );
 
   // Draw Phase: Draw Map Squares
   u8 msx, msy;
@@ -300,7 +340,7 @@ DoRender(Buffer *buffer, GamePlayer *player)
     {
       if(map_board [msy * map.square_column + msx] == 1)
       {
-        DrawRect(
+        draw_rectangle(
             buffer, msx * map.square_size + 1,
             msy * map.square_size + 1, map.square_size - 1,
             map.square_size - 1, 0xffa68a64
@@ -313,7 +353,7 @@ DoRender(Buffer *buffer, GamePlayer *player)
   // printf("%f,%f,%f",player->a,player->dx,player->dy);
 
   // Draw Phase: Draw Player Rays
-  DrawRect(
+  draw_rectangle(
       buffer, player->x + player->dx * 10, player->y + player->dy * 10,
       player->width / 2, player->height / 2, 0xffc1121f
   );
@@ -409,14 +449,14 @@ DoRender(Buffer *buffer, GamePlayer *player)
         dof   += 1;
       }
     }
-    DrawRect(
+    draw_rectangle(
         buffer, ray_x, ray_y, player->width / 2, player->height / 2,
         0xfffb8500
     );
   }
 
   // Draw Phase: Draw Player
-  DrawRect(
+  draw_rectangle(
       buffer, player->x, player->y, player->width, player->height,
       0xff656d4a
   );
