@@ -228,29 +228,24 @@ draw_rectangle(
     u32 rect_height, u32 rect_color
 )
 {
-#if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
+  //
+  // buffer pointer should not be null
+  //
+  NILE_SAFE_ASSERT(buffer != NULL);
+
   //
   // rectangle width and height SHOULD NOT be less or equal to 0
   //
-  assert(rect_width <= 0);
-  assert(rect_height <= 0);
-#endif
+  NILE_SAFE_ASSERT(0 < rect_width);
+  NILE_SAFE_ASSERT(0 < rect_height);
 
   u32 end_x = start_x + rect_width;
   u32 end_y = start_y + rect_height;
-#if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
   //
   // catch u32 overflows
   //
-  assert(end_x <= start_x);
-  assert(end_y <= start_y);
-#endif
-
-#if defined(NILE_BUILD_DEBUG) || defined(NILE_BUILD_RELEASESAFE)
-  //
-  // Conversion checks
-  //
-#endif
+  NILE_SAFE_ASSERT(start_x < end_x);
+  NILE_SAFE_ASSERT(start_y < end_y);
 
   start_x = (u32)clamp(0, (f32)start_x, (f32)buffer->Width);
   end_x   = (u32)clamp(0, (f32)end_x, (f32)buffer->Width);
@@ -268,10 +263,10 @@ draw_rectangle(
   //    }
   //  }
 
-  i32 draw_y = start_y;
-  i32 draw_x = start_x;
+  u32 draw_y = start_y;
   while(draw_y < end_y)
   {
+    u32 draw_x = start_x;
     while(draw_x < end_x)
     {
       u32 *Pixel = (u32 *)((u32 *)buffer->Memory
@@ -287,12 +282,12 @@ draw_rectangle(
   }
 }
 
-void
-draw_rectangle_simd(
-    Buffer *buffer, int32_t start_x, int32_t start_y,
-    int32_t rect_width, int32_t rect_height, uint32_t rect_color
-)
-{}
+// void
+// draw_rectangle_simd(
+//     Buffer *buffer, int32_t start_x, int32_t start_y,
+//     int32_t rect_width, int32_t rect_height, uint32_t rect_color
+// )
+// {}
 
 void
 draw_line(
@@ -327,12 +322,17 @@ draw_circle(
 void
 DoRender(Buffer *buffer, GamePlayer *player)
 {
+  NILE_SAFE_ASSERT(buffer != NULL);
+  NILE_SAFE_ASSERT(player != NULL);
+
   // Draw Phase: Draw Background
   draw_rectangle(
       buffer, 0, 0, buffer->Width, buffer->Height, 0xffede0d4
   );
+  NILE_SAFE_ASSERT(buffer != NULL);
 
   // Draw Phase: Draw Map Squares
+  // puts("draw map start");
   u8 msx, msy;
   for(msy = 0; msy < map.square_row; msy++)
   {
@@ -348,17 +348,19 @@ DoRender(Buffer *buffer, GamePlayer *player)
       }
     }
   }
-
-  // Draw Phase: Draw Lines
-  // printf("%f,%f,%f",player->a,player->dx,player->dy);
+  NILE_SAFE_ASSERT(buffer != NULL);
+  // puts("draw map end");
 
   // Draw Phase: Draw Player Rays
+  // puts("draw player rays start");
   draw_rectangle(
       buffer, player->x + player->dx * 10, player->y + player->dy * 10,
       player->width / 2, player->height / 2, 0xffc1121f
   );
+  NILE_SAFE_ASSERT(buffer != NULL);
+  // puts("draw player rays end");
 
-  int ray, map_x, map_y, map_p, dof;
+  u32 ray, map_x, map_y, map_p, dof;
   f64 ray_x, ray_y, ray_a, xo, yo;
   ray_a = player->a;
   for(ray = 0; ray < 1; ray++)
@@ -454,12 +456,16 @@ DoRender(Buffer *buffer, GamePlayer *player)
         0xfffb8500
     );
   }
+  NILE_SAFE_ASSERT(buffer != NULL);
 
   // Draw Phase: Draw Player
+  // puts("draw player start");
   draw_rectangle(
       buffer, player->x, player->y, player->width, player->height,
       0xff656d4a
   );
+  NILE_SAFE_ASSERT(buffer != NULL);
+  // puts("draw player end");
 }
 
 //
