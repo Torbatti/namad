@@ -1,6 +1,6 @@
 # temporary folders
-/build
-/local
+build
+local
 
 # zig related
 .zig-cache
